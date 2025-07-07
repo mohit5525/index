@@ -14,7 +14,7 @@
     .scoreboard {
       display: flex;
       gap: 20px;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0, 0, 0, 0.6);
       padding: 10px 20px;
       border-radius: 10px;
     }
@@ -24,23 +24,33 @@
   <div class="scoreboard" id="scoreboard">Loading...</div>
 
   <script>
-    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQHqImP3fKqKz2lYJdZe1q1ltP3thiTbyh4xAx2HsrXTXJVB3_g9q-x3jLoNfFC7JIfyVmrg94nOeBt/pub?gid=2121641090&single=true&output=csv';
+    const baseUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQHqImP3fKqKz2lYJdZe1q1ltP3thiTbyh4xAx2HsrXTXJVB3_g9q-x3jLoNfFC7JIfyVmrg94nOeBt/pub?gid=2121641090&single=true&output=csv';
 
     async function fetchScore() {
-      const response = await fetch(sheetUrl);
-      const text = await response.text();
-      const rows = text.split('\n').map(row => row.split(','));
-      const [match, teamA, scoreA, teamB, scoreB, overs] = rows[1];
+      try {
+        const response = await fetch(baseUrl + '&t=' + new Date().getTime()); // prevent cache
+        const text = await response.text();
+        const rows = text.trim().split('\n').map(row => row.split(','));
 
-      document.getElementById('scoreboard').innerHTML = `
-        <div><strong>${teamA}</strong>: ${scoreA}</div>
-        <div><strong>${teamB}</strong>: ${scoreB}</div>
-        <div>Overs: ${overs}</div>
-      `;
+        // Ensure the second row exists and has enough columns
+        if (rows.length > 1 && rows[1].length >= 6) {
+          const [match, teamA, scoreA, teamB, scoreB, overs] = rows[1];
+          document.getElementById('scoreboard').innerHTML = `
+            <div><strong>${teamA}</strong>: ${scoreA}</div>
+            <div><strong>${teamB}</strong>: ${scoreB}</div>
+            <div>Overs: ${overs}</div>
+          `;
+        } else {
+          document.getElementById('scoreboard').innerText = 'Waiting for valid data...';
+        }
+      } catch (err) {
+        document.getElementById('scoreboard').innerText = 'Error loading score.';
+        console.error(err);
+      }
     }
 
     fetchScore();
-    setInterval(fetchScore, 5000); // updates every 5 seconds
+    setInterval(fetchScore, 5000); // Refresh every 5 sec
   </script>
 </body>
 </html>
